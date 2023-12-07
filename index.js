@@ -11,10 +11,10 @@ var io = require("socket.io")(server);
 
 // middle ware
 app.use(express.json());
+let roomProcessingState = {}; // You can use an object to store processing state for each room
 
 const DB =
   "mongodb+srv://omar12kaialy:omarlord1234@cluster0.a4cd4gh.mongodb.net/?retryWrites=true&w=majority";
-
 io.on("connection", (socket) => {
   console.log("connected!");
   socket.on("createRoom", async ({ nickname }) => {
@@ -32,7 +32,7 @@ io.on("connection", (socket) => {
       room = await room.save();
       console.log(room);
       const roomId = room._id.toString();
-
+      console.log(roomId);
       socket.join(roomId);
       // io -> send data to everyone
       // socket -> sending data to yourself
@@ -41,7 +41,6 @@ io.on("connection", (socket) => {
       console.log(e);
     }
   });
-
   socket.on("joinRoom", async ({ nickname, roomId }) => {
     try {
       if (!roomId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -55,6 +54,7 @@ io.on("connection", (socket) => {
           nickname,
           socketID: socket.id,
           playerType: "O",
+
         };
         socket.join(roomId);
         room.players.push(player);
@@ -76,6 +76,16 @@ io.on("connection", (socket) => {
 
   socket.on("tap", async ({ index, roomId, turn }) => {
     try {
+      if (roomProcessingState[roomId]) {
+        socket.emit(
+          "errorOccurred",
+          "Room is currently processing an event. Please wait."
+        );
+        console.log('room is busy');
+        return;
+      }
+      roomProcessingState[roomId] = true;
+
       let room = await Room.findById(roomId);
 
       let choice = room.turn.playerType; // x or o
@@ -95,9 +105,13 @@ io.on("connection", (socket) => {
           choice,
           room,
         });
+        roomProcessingState[roomId] = false;
+
       }
     } catch (e) {
       console.log(e);
+      roomProcessingState[roomId] = false;
+
     }
   });
 
