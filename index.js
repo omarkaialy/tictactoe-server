@@ -14,7 +14,7 @@ app.use(express.json());
 let roomProcessingState = {}; // You can use an object to store processing state for each room
 
 const DB =
-  "mongodb+srv://omar12kaialy:omarlord1234@cluster0.a4cd4gh.mongodb.net/?retryWrites=true&w=majority";
+  "mongodb+srv://omar12kaialy:omarlord1234@cluster0.a4cd4gh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 io.on("connection", (socket) => {
   console.log("connected!");
   socket.on("createRoom", async ({ nickname }) => {
